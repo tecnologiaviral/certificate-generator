@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WOU Academic Document Generator</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel Standalone for live JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
+</head>
+<body class="bg-slate-900">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        // --- Start of Consolidated Application Code ---
+
+        // Data and Logic from constants.ts
+        const COURSES = [
+            { code: 'BI 301', title: 'Principles of Biology', credits: 4.0 }, { code: 'CH 222', title: 'General Chemistry II', credits: 5.0 }, { code: 'MA 211', title: 'Foundations of Elem. Math', credits: 4.0 }, { code: 'BA 325', title: 'Marketing Principles', credits: 4.0 }, { code: 'WR 122', title: 'Argument & Research', credits: 4.0 }, { code: 'CS 161', title: 'Intro to Computer Science', credits: 4.0 }, { code: 'ART 115', title: 'Basic Design', credits: 3.0 }, { code: 'MUS 101', title: 'Music Appreciation', credits: 3.0 }, { code: 'PSY 201', title: 'General Psychology', credits: 4.0 }, { code: 'SOC 204', title: 'Intro to Sociology', credits: 4.0 }, { code: 'ES 201', title: 'Earth Science', credits: 4.0 }, { code: 'PH 201', title: 'General Physics', credits: 5.0 },
+        ];
+        const DAYS = ['M / W / F', 'T / Th', 'M / W', 'W', 'M'];
+        const TIMES = ['09:00 AM - 09:50 AM', '10:00 AM - 11:50 AM', '11:00 AM - 11:50 AM', '01:00 PM - 01:50 PM', '02:00 PM - 03:50 PM', '04:00 PM - 05:50 PM'];
+        const ROOMS = ['NS 204', 'NS 112', 'MTH 108', 'ITC 211', 'APSC 301', 'BH 101', 'SS 203'];
+        const INSTRUCTORS = ['Davis, A.', 'Patel, S.', 'Garcia, L.', 'Thompson, R.', 'Miller, C.', 'Lee, J.', 'Smith, K.', 'Johnson, B.', 'Williams, T.', 'Brown, D.'];
+        const CHARGE_ITEMS = [{ description: 'Undergraduate Tuition', base: 450, perCredit: true }, { description: 'Student Health Fee', base: 415, perCredit: false }, { description: 'Incidental Fee', base: 530, perCredit: false }, { description: 'Building Fee', base: 95, perCredit: false }, { description: 'Science Lab Fee', base: 75, perCredit: false }, { description: 'Technology Fee', base: 120, perCredit: false }, { description: 'Online Course Fee', base: 50, perCredit: false },];
+        const CREDIT_ITEMS = [{ description: 'Financial Aid - Pell Grant', min: 1000, max: 3500 }, { description: 'Financial Aid - WOU Scholarship', min: 500, max: 5000 }, { description: 'State Opportunity Grant', min: 500, max: 2000 }, { description: 'External Scholarship', min: 250, max: 1500 },];
+        const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const formatCurrency = (amount) => `$${amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+        const shuffleArray = (array) => {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        };
+        const generateHtmlTemplate = (fullName, studentId) => {
+            const selectedCourses = shuffleArray(COURSES).slice(0, 5);
+            let totalCredits = 0;
+            const classScheduleRows = selectedCourses.map(course => {
+                totalCredits += course.credits;
+                const crn = Math.floor(60000 + Math.random() * 2000);
+                return `<tr><td>${course.code} (${crn})</td><td>${course.title}</td><td>${course.credits.toFixed(1)}</td><td>${getRandomItem(DAYS)}</td><td>${getRandomItem(TIMES)}</td><td>${getRandomItem(ROOMS)}</td><td>${getRandomItem(INSTRUCTORS)}</td></tr>`;
+            }).join('');
+            let totalCharges = 0;
+            const chargeRowsData = [];
+            const tuitionCharge = CHARGE_ITEMS.find(item => item.perCredit);
+            const tuitionAmount = tuitionCharge.base * totalCredits;
+            chargeRowsData.push({ description: `${tuitionCharge.description} (${totalCredits} credits)`, amount: tuitionAmount });
+            totalCharges += tuitionAmount;
+            const otherFees = shuffleArray(CHARGE_ITEMS.filter(item => !item.perCredit)).slice(0, Math.floor(Math.random() * 2) + 2);
+            otherFees.forEach(fee => {
+                chargeRowsData.push({ description: fee.description, amount: fee.base });
+                totalCharges += fee.base;
+            });
+            let totalCreditsAndPayments = 0;
+            const creditRowsData = [];
+            const financialAids = shuffleArray(CREDIT_ITEMS).slice(0, Math.floor(Math.random() * 2) + 1);
+            financialAids.forEach(aid => {
+                if (totalCreditsAndPayments + aid.min < totalCharges * 0.9) {
+                    const amount = Math.floor(Math.random() * (aid.max - aid.min + 1)) + aid.min;
+                    creditRowsData.push({ description: aid.description, amount });
+                    totalCreditsAndPayments += amount;
+                }
+            });
+            const finalPayment = totalCharges - totalCreditsAndPayments;
+            if (finalPayment > 0) {
+                creditRowsData.push({ description: `Payment Received (03/10/2025)`, amount: finalPayment });
+            }
+            const finalTotalCredits = totalCharges;
+            const chargeTableRows = chargeRowsData.map(c => `<tr><td>${c.description}</td><td>${formatCurrency(c.amount)}</td><td></td></tr>`).join('');
+            const creditTableRows = creditRowsData.map(c => `<tr><td style="font-style: italic;">${c.description}</td><td></td><td>(${formatCurrency(c.amount)})</td></tr>`).join('');
+            const accountSummaryTable = chargeTableRows + creditTableRows;
+            return `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Academic Documents - WOU</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+body { font-family: 'Roboto', Arial, sans-serif; background-color: #e0e0e0; margin: 0; padding: 0; -webkit-print-color-adjust: exact; color-adjust: exact; }
+.page-container { position: relative; width: 21cm; min-height: 29.7cm; padding: 2.5cm; margin: 1.5cm auto; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.15); box-sizing: border-box; page-break-after: always; overflow: hidden; }
+.page-container:last-child { page-break-after: avoid; }
+.page-container::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); width: 500px; height: 500px; background-image: url('https://wou.edu/provost/files/2021/08/W-Logo_alpha.png'); background-repeat: no-repeat; background-position: center; background-size: contain; opacity: 0.05; z-index: 1; }
+.main-content { position: relative; z-index: 2; }
+.doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #006747; padding-bottom: 15px; margin-bottom: 30px; }
+.doc-header .logo { max-width: 280px; height: auto; }
+.doc-header .university-info { text-align: right; font-size: 13px; color: #444; line-height: 1.5; }
+.doc-header .university-info strong { color: #006747; }
+h1.document-title { color: #006747; font-size: 24px; font-weight: 700; margin-bottom: 20px; text-align: center; letter-spacing: 1px; }
+h3.section-title { color: #006747; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-top: 35px; margin-bottom: 20px; font-size: 16px; font-weight: 700; }
+.student-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 25px; background-color: #f8f9fa; border-left: 4px solid #006747; padding: 15px; margin-bottom: 30px; font-size: 14px; }
+.student-info-grid p { margin: 0; }
+.student-info-grid strong { font-weight: 500; color: #333; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+thead th { background-color: #006747; color: white; font-weight: 700; font-size: 14px; }
+tbody tr:nth-child(even) { background-color: #f9f9f9; }
+#id-card-wrapper { display: flex; justify-content: center; align-items: center; margin-top: 40px; }
+#id-card { width: 580px; border: 1px solid #ccc; border-radius: 15px; padding: 30px; background: #fdfdfd; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: grid; grid-template-columns: 160px 1fr; gap: 30px; }
+.photo-placeholder { width: 160px; height: 190px; background: #e9ecef; border: 1px dashed #aaa; display: flex; justify-content: center; align-items: center; text-align: center; color: #888; font-size: 14px; }
+.id-info p { margin: 10px 0; font-size: 15px; }
+.id-info strong { display: block; color: #006747; font-size: 12px; margin-bottom: 3px; text-transform: uppercase; }
+.id-header { grid-column: 1 / -1; display: flex; align-items: center; border-bottom: 2px solid #006747; padding-bottom: 15px; margin-bottom: 10px; }
+.id-header img { width: 180px; }
+.id-header span { font-size: 18px; font-weight: bold; color: #006747; margin-left: auto; }
+.barcode { margin-top: 15px; width: 100%; height: 50px; background-image: repeating-linear-gradient(to right, #000 0, #000 1px, transparent 1px, transparent 2px, #000 2px, #000 4px, transparent 4px, transparent 6px, #000 6px, #000 7px, transparent 7px, transparent 10px); }
+.notes { margin-top: 20px; font-size: 13px; color: #555; border-top: 1px solid #eee; padding-top: 20px; }
+.notes ul { padding-left: 20px; line-height: 1.6; }
+.doc-footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+.signature-area { width: 300px; text-align: center; }
+.signature-line { border-top: 1px solid #333; padding-top: 10px; font-size: 14px; font-style: italic; color: #333; }
+.seal-placeholder { width: 120px; height: 120px; border: 2px dashed #006747; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-align: center; color: #006747; font-size: 12px; font-weight: bold; line-height: 1.2; }
+tfoot td { font-weight: bold; background-color: #f8f9fa; }
+tfoot .final-balance { font-size: 16px; color: #006747; }
+@media print { body { background-color: #fff; } .page-container { margin: 0 auto; border: none; box-shadow: none; } }
+</style>
+</head><body>
+<div class="page-container"><div class="main-content"><div class="doc-header"><img src="https://wou.edu/images/WesternOregonUniversity-logo.jpg" alt="Western Oregon University Logo" class="logo"><div class="university-info"><strong>Western Oregon University</strong><br>345 Monmouth Ave N<br>Monmouth, OR 97361<br>(503) 838-8000</div></div><h1 class="document-title">Academic Credential</h1><div id="id-card-wrapper"><div id="id-card"><div class="id-header"><img src="https://wou.edu/images/WesternOregonUniversity-logo.jpg" alt="WOU Logo"><span>STUDENT ID</span></div><div class="photo-placeholder">Photo<br>Placeholder</div><div class="id-info"><p><strong>Student Name</strong>${fullName}</p><p><strong>Student ID</strong>${studentId}</p><p><strong>Major</strong>Marketing</p><p><strong>Level</strong>Undergraduate – Junior</p><div style="display: flex; justify-content: space-between; margin-top: 20px;"><p><strong>Issued:</strong> 09/09/2023</p><p><strong>Expires:</strong> 09/30/2025</p></div></div><div class="barcode"></div></div></div></div></div>
+<div class="page-container"><div class="main-content"><div class="doc-header"><img src="https://wou.edu/images/WesternOregonUniversity-logo.jpg" alt="Western Oregon University Logo" class="logo"><div class="university-info"><strong>Office of the Registrar</strong><br>345 Monmouth Ave N<br>Monmouth, OR 97361</div></div><h1 class="document-title">Class Schedule - Spring 2025</h1><div class="student-info-grid"><p><strong>Student Name:</strong> ${fullName}</p><p><strong>Program:</strong> B.S. in Business, Marketing</p><p><strong>Student ID:</strong> ${studentId}</p><p><strong>Academic Level:</strong> Junior</p></div><table><thead><tr><th>Course (CRN)</th><th>Course Title</th><th>Credits</th><th>Days</th><th>Time</th><th>Room</th><th>Instructor</th></tr></thead><tbody>${classScheduleRows}</tbody></table><div class="notes"><h3 class="section-title" style="margin-top: 15px;">Important Notes</h3><ul><li><strong>Lab for CH 222:</strong> Thursdays from 04:00 PM to 06:50 PM in room NS 101. Attendance is mandatory.</li><li><strong>Term Dates:</strong> The Spring 2025 term runs from March 31, 2025, to June 12, 2025.</li><li>This schedule is subject to change. Please verify all details in your student portal before the term begins.</li></ul></div><div class="doc-footer"><div class="signature-area"><div class="signature-line">Registrar's Signature</div></div><div class="seal-placeholder">OFFICIAL<br>WOU<br>SEAL</div></div></div></div>
+<div class="page-container"><div class="main-content"><div class="doc-header"><img src="https://wou.edu/images/WesternOregonUniversity-logo.jpg" alt="Western Oregon University Logo" class="logo"><div class="university-info"><strong>Business Services / Bursar</strong><br>345 Monmouth Ave N<br>Monmouth, OR 97361</div></div><h1 class="document-title">Tuition Receipt - Spring 2025</h1><div class="student-info-grid"><p><strong>Student Name:</strong> ${fullName}</p><p><strong>Term:</strong> Spring 2025</p><p><strong>Student ID:</strong> ${studentId}</p><p><strong>Receipt Date:</strong> March 15, 2025</p></div><h3 class="section-title">Account Summary</h3><table><thead><tr><th>Description</th><th>Charge</th><th>Payment/Credit</th></tr></thead><tbody>${accountSummaryTable}</tbody><tfoot><tr><td style="text-align: right;"><strong>Total Charges</strong></td><td><strong>${formatCurrency(totalCharges)}</strong></td><td></td></tr><tr><td style="text-align: right;"><strong>Total Payments & Credits</strong></td><td></td><td><strong>(${formatCurrency(finalTotalCredits)})</strong></td></tr><tr><td style="text-align: right;" class="final-balance">FINAL BALANCE</td><td></td><td class="final-balance">$0.00</td></tr></tfoot></table><div class="doc-footer"><div class="signature-area"><div class="signature-line">Registrar's Signature</div></div><div class="seal-placeholder">OFFICIAL<br>WOU<br>SEAL</div></div></div></div>
+</body></html>
+`;
+        };
+
+        // Main App Component from App.tsx
+        const { useState, useEffect } = React;
+
+        const translations = {
+            es: { title: 'Generador de Comprobante', subtitle: 'Ingrese sus datos para generar su documento académico.', firstNameLabel: 'Ingresa tu Nombre', firstNamePlaceholder: 'Ej: Juan', lastNameLabel: 'Ingresa tu Apellido', lastNamePlaceholder: 'Ej: Pérez', studentIdLabel: 'Ingresa los últimos 4 dígitos de tu ID', studentIdPlaceholder: 'Ej: 1234', generateButton: 'Generar Comprobante', generatingButton: 'Generando...', resetButtonLabel: 'Limpiar formulario', langName: 'MX Español', themeToggle: { light: 'Cambiar a tema claro', dark: 'Cambiar a tema oscuro', } },
+            en: { title: 'Certificate Generator', subtitle: 'Enter your details to generate your academic document.', firstNameLabel: 'Enter your First Name', firstNamePlaceholder: 'Ex: John', lastNameLabel: 'Enter your Last Name', lastNamePlaceholder: 'Ex: Doe', studentIdLabel: 'Enter the last 4 digits of your ID', studentIdPlaceholder: 'Ex: 1234', generateButton: 'Generate Certificate', generatingButton: 'Generating...', resetButtonLabel: 'Reset form', langName: 'US English', themeToggle: { light: 'Switch to light theme', dark: 'Switch to dark theme', } },
+            pt: { title: 'Gerador de Comprovante', subtitle: 'Insira seus dados para gerar seu documento acadêmico.', firstNameLabel: 'Insira seu Nome', firstNamePlaceholder: 'Ex: João', lastNameLabel: 'Insira seu Sobrenome', lastNamePlaceholder: 'Ex: Silva', studentIdLabel: 'Insira os últimos 4 dígitos do seu ID', studentIdPlaceholder: 'Ex: 1234', generateButton: 'Gerar Comprovante', generatingButton: 'Gerando...', resetButtonLabel: 'Limpar formulário', langName: 'BR Português', themeToggle: { light: 'Mudar para tema claro', dark: 'Mudar para tema escuro', } }
+        };
+
+        const SunIcon = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>);
+        const MoonIcon = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>);
+        const DocumentIcon = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>);
+        const IdCardIcon = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="6" y1="10" x2="10" y2="10"></line><line x1="6" y1="14" x2="10" y2="14"></line><line x1="14" y1="10" x2="18" y2="10"></line><line x1="14" y1="14" x2="18" y2="14"></line></svg>);
+        const ReloadIcon = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>);
+
+        const App = () => {
+            const [firstName, setFirstName] = useState('');
+            const [lastName, setLastName] = useState('');
+            const [studentIdSuffix, setStudentIdSuffix] = useState('');
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [theme, setTheme] = useState('dark');
+            const [language, setLanguage] = useState('es');
+
+            useEffect(() => {
+                const root = window.document.documentElement;
+                if (theme === 'dark') {
+                    root.classList.add('dark');
+                } else {
+                    root.classList.remove('dark');
+                }
+            }, [theme]);
+            
+            const handleStudentIdChange = (e) => {
+                const numericValue = e.target.value.replace(/[^0-9]/g, '');
+                if (numericValue.length <= 4) {
+                    setStudentIdSuffix(numericValue);
+                }
+            };
+            
+            const handleReset = () => {
+                setFirstName('');
+                setLastName('');
+                setStudentIdSuffix('');
+            };
+
+            const isFormIncomplete = !firstName.trim() || !lastName.trim() || studentIdSuffix.trim().length !== 4;
+
+            const handleGenerateClick = () => {
+                if (isFormIncomplete) return;
+                setIsGenerating(true);
+                const fullName = `${firstName.trim()} ${lastName.trim()}`;
+                const finalStudentId = `98765${studentIdSuffix.trim()}`;
+                const finalLastName = lastName.trim();
+                const processedHtml = generateHtmlTemplate(fullName, finalStudentId);
+                const blob = new Blob([processedHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${finalLastName}_${finalStudentId}_wou.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setTimeout(() => setIsGenerating(false), 1000);
+            };
+
+            const currentTexts = translations[language];
+
+            return (
+                <div className={`min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-300 ${theme === 'light' ? 'bg-gray-100' : 'bg-slate-900'}`}>
+                    <div className={`w-full max-w-2xl mx-auto rounded-2xl shadow-2xl overflow-hidden relative p-8 transition-colors duration-300 ${theme === 'light' ? 'bg-white' : 'bg-slate-800'}`}>
+                        <div className="absolute top-6 right-6">
+                            <button
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                className={`p-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                                    theme === 'light'
+                                        ? 'bg-slate-800 text-white hover:bg-slate-700 focus:ring-offset-white'
+                                        : 'bg-white text-slate-800 hover:bg-gray-200 focus:ring-offset-slate-800'
+                                }`}
+                                aria-label={theme === 'dark' ? currentTexts.themeToggle.light : currentTexts.themeToggle.dark}
+                            >
+                                {theme === 'dark' ? (
+                                    <SunIcon className="w-5 h-5" />
+                                ) : (
+                                    <MoonIcon className="w-5 h-5" />
+                                )}
+                            </button>
+                        </div>
+                        <div className="text-center mb-8">
+                            <img src="https://wou.edu/images/WesternOregonUniversity-logo.jpg" alt="Western Oregon University Logo" className="w-72 mx-auto mb-4"/>
+                            <h1 className={`text-3xl font-bold transition-colors duration-300 ${theme === 'light' ? 'text-green-700' : 'text-green-400'}`}>
+                                {currentTexts.title}
+                            </h1>
+                            <p className={`mt-2 transition-colors duration-300 ${theme === 'light' ? 'text-gray-500' : 'text-slate-400'}`}>{currentTexts.subtitle}</p>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="flex-1">
+                                    <label htmlFor="firstName" className={`flex items-center gap-2 text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-700' : 'text-slate-300'}`}>
+                                        <DocumentIcon className="w-4 h-4" />
+                                        {currentTexts.firstNameLabel}
+                                    </label>
+                                    <input id="firstName" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={currentTexts.firstNamePlaceholder} className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition ${theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-800 focus:ring-green-500' : 'bg-slate-900 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-green-500'}`} />
+                                </div>
+                                <div className="flex-1">
+                                     <label htmlFor="lastName" className={`flex items-center gap-2 text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-700' : 'text-slate-300'}`}>
+                                        <DocumentIcon className="w-4 h-4" />
+                                        {currentTexts.lastNameLabel}
+                                    </label>
+                                    <input id="lastName" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={currentTexts.lastNamePlaceholder} className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition ${theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-800 focus:ring-green-500' : 'bg-slate-900 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-green-500'}`} />
+                                </div>
+                            </div>
+                            <div>
+                                 <label htmlFor="studentId" className={`flex items-center gap-2 text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-700' : 'text-slate-300'}`}>
+                                    <IdCardIcon className="w-4 h-4" />
+                                    {currentTexts.studentIdLabel}
+                                </label>
+                                 <div className={`flex items-center w-full rounded-lg border focus-within:ring-2 transition overflow-hidden ${theme === 'light' ? 'bg-gray-50 border-gray-300 focus-within:ring-green-500' : 'bg-slate-900 border-slate-700 text-slate-200 focus-within:ring-green-500'}`}>
+                                    <span className="px-4 py-3 bg-[#1f2a3d] text-white font-semibold text-sm">98765</span>
+                                    <input id="studentId" type="text" value={studentIdSuffix} onChange={handleStudentIdChange} placeholder={currentTexts.studentIdPlaceholder} className={`w-full px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 ${theme === 'light' ? 'text-gray-800' : 'text-slate-200 placeholder-slate-500'}`} maxLength={4} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-8 flex items-stretch gap-2">
+                            <button onClick={handleGenerateClick} disabled={isFormIncomplete || isGenerating} className="w-4/5 flex items-center justify-center gap-3 px-4 py-3 font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                                {isGenerating ? (
+                                    <React.Fragment>
+                                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      {currentTexts.generatingButton}
+                                    </React.Fragment>
+                                ) : (
+                                    <React.Fragment>
+                                        <DocumentIcon className="w-5 h-5"/>
+                                        {currentTexts.generateButton}
+                                    </React.Fragment>
+                                )}
+                            </button>
+                             <button onClick={handleReset} type="button" aria-label={currentTexts.resetButtonLabel} className={`w-1/5 flex items-center justify-center rounded-lg transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${theme === 'light' ? 'bg-gray-200 text-gray-700 hover:bg-green-600 hover:text-white focus:ring-offset-white' : 'bg-slate-700 text-slate-300 hover:bg-green-600 hover:text-white focus:ring-offset-slate-800'}`}>
+                                <ReloadIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className={`mt-8 pt-6 border-t flex justify-center items-center space-x-2 md:space-x-4 transition-colors duration-300 ${theme === 'light' ? 'border-gray-200' : 'border-slate-700'}`}>
+                             {['es', 'en', 'pt'].map(lang => (
+                                <button key={lang} onClick={() => setLanguage(lang)} className={`px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${theme === 'light' ? 'focus:ring-offset-white' : 'focus:ring-offset-slate-800'} ${ language === lang ? 'bg-green-600 text-white focus:ring-green-500' : `${theme === 'light' ? 'text-gray-500 hover:bg-gray-200' : 'text-slate-400 hover:bg-slate-700'} focus:ring-green-500` }`} aria-label={`Set language to ${translations[lang].langName}`}>
+                                    {translations[lang].langName}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Application entry point from index.tsx
+        const rootElement = document.getElementById('root');
+        if (!rootElement) {
+          throw new Error("Could not find root element to mount to");
+        }
+
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        );
+
+        // --- End of Consolidated Application Code ---
+    </script>
+</body>
+</html>
